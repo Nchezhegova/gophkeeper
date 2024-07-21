@@ -3,10 +3,8 @@ package commands
 import (
 	"context"
 	"fmt"
-	"github.com/Nchezhegova/gophkeeper/internal/interfaces/grpc/proto"
+	"github.com/Nchezhegova/gophkeeper/pkg/grpcclient"
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 	"log"
 )
 
@@ -16,25 +14,15 @@ func NewLoginCommand() *cobra.Command {
 		Short: "Login a user",
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			creds, err := credentials.NewClientTLSFromFile("../cert/server-cert.pem", "")
+			client, err := grpcclient.NewClient()
 			if err != nil {
-				log.Fatalf("could not load TLS certificate: %v", err)
+				log.Fatalf("could not connect to server: %v", err)
 			}
-
-			conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(creds))
-			if err != nil {
-				log.Fatalf("did not connect: %v", err)
-			}
-			defer conn.Close()
-
-			client := proto.NewGophKeeperClient(conn)
+			defer client.Close()
 
 			ctx := context.Background()
 
-			resp, err := client.Login(ctx, &proto.LoginRequest{
-				Username: args[0],
-				Password: args[1],
-			})
+			resp, err := client.Login(ctx, args[0], args[1])
 			if err != nil {
 				log.Fatalf("could not login: %v", err)
 			}

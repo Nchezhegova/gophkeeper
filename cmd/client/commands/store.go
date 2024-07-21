@@ -2,11 +2,8 @@ package commands
 
 import (
 	"context"
-	"github.com/Nchezhegova/gophkeeper/internal/interfaces/grpc/proto"
+	"github.com/Nchezhegova/gophkeeper/pkg/grpcclient"
 	"github.com/spf13/cobra"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/metadata"
 	"log"
 )
 
@@ -15,50 +12,37 @@ func NewStoreCommand() *cobra.Command {
 		Use:   "store [key] [type] [data]",
 		Short: "Store data",
 		Args:  cobra.ExactArgs(3),
-		Run:   storeData,
+		Run:   handleStoreDataCommand,
 	}
-	cmd.Flags().StringP("token", "T", "", "Authorization token")
-	cmd.MarkFlagRequired("token")
+	cmd.Flags().StringP(flagToken, "T", "", "Authorization token")
+	cmd.MarkFlagRequired(flagToken)
 	return cmd
 }
 
-func storeData(cmd *cobra.Command, args []string) {
+func handleStoreDataCommand(cmd *cobra.Command, args []string) {
 	key := args[0]
 	dataType := args[1]
 	data := args[2]
-	token, _ := cmd.Flags().GetString("token")
+	token, _ := cmd.Flags().GetString(flagToken)
 
-	creds, err := credentials.NewClientTLSFromFile("../cert/server-cert.pem", "")
-	if err != nil {
-		log.Fatalf("could not load TLS certificate: %v", err)
-	}
-
-	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(creds))
+	client, err := grpcclient.NewClient()
 	if err != nil {
 		log.Fatalf("could not connect to server: %v", err)
 	}
-	defer conn.Close()
+	defer client.Close()
 
-	client := proto.NewGophKeeperClient(conn)
-	ctx := metadata.AppendToOutgoingContext(context.Background(), "authorization", "Bearer "+token)
-	identifier := getIdentifier(dataType, data)
-
-	reqGet := &proto.GetDataRequest{
-		Key:        key,
-		Type:       dataType,
-		Identifier: identifier,
+	ctx := context.Background()
+	identifier, err := getIdentifier(dataType, data)
+	if err != nil {
+		log.Fatalf("could not extract identifier: %v", err)
 	}
-	resGet, err := client.GetData(ctx, reqGet)
+
+	resGet, err := client.GetData(ctx, key, dataType, identifier, token)
 	if err == nil && len(resGet.Data) > 0 {
 		log.Fatalf("Already exists")
 	}
-	req := &proto.StoreDataRequest{
-		Key:  key,
-		Type: dataType,
-		Data: []byte(data),
-	}
-	_, err = client.StoreData(ctx, req)
-	if err != nil {
+
+	if err := client.StoreData(ctx, key, dataType, data, token); err != nil {
 		log.Fatalf("could not store data: %v", err)
 	}
 	log.Println("Data stored successfully")

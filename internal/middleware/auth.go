@@ -2,20 +2,13 @@ package middleware
 
 import (
 	"context"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/Nchezhegova/gophkeeper/internal/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"strings"
 )
-
-var jwtKey = []byte("your_secret_key")
-
-type Claims struct {
-	UserID uint32 `json:"user_id"`
-	jwt.StandardClaims
-}
 
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(
@@ -44,16 +37,12 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 		}
 
 		tokenString := parts[1]
-		claims := &Claims{}
-
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			return jwtKey, nil
-		})
-		if err != nil || !token.Valid {
+		claims, err := jwt.ParseToken(tokenString)
+		if err != nil {
 			return nil, status.Errorf(codes.Unauthenticated, "invalid token")
 		}
 
-		newCtx := context.WithValue(ctx, "user_id", int(claims.UserID))
+		newCtx := jwt.NewContextWithUserID(ctx, claims.UserID)
 		return handler(newCtx, req)
 	}
 }

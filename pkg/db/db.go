@@ -7,20 +7,14 @@ import (
 	"log"
 )
 
-var DB *gorm.DB
-
-func Init() {
-	var err error
-	DB, err = gorm.Open("sqlite3", "gophkeeper.db")
+func New() *gorm.DB {
+	db, err := gorm.Open("sqlite3", "gophkeeper.db")
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 
-	DB.AutoMigrate(&entities.User{}, &entities.Data{})
+	db.AutoMigrate(&entities.User{}, &entities.Data{})
 
 	log.Println("Database connection successfully established")
-}
-
-func GetDB() *gorm.DB {
-	return DB
+	return db
 }

@@ -1,0 +1,4 @@
+tls:
+  clientCertFile: "../cert/server-cert.pem"
+  serverCertFile: "../cert/server-cert.pem"
+  serverKeyFile: "../cert/server-key.pem"

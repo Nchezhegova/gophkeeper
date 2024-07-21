@@ -7,6 +7,14 @@ import (
 	"log"
 )
 
+const (
+	flagKey        = "key"
+	flagType       = "type"
+	flagIdentifier = "identifier"
+	flagToken      = "token"
+	flagNewData    = "new_data"
+)
+
 var (
 	Version   string
 	BuildDate string
@@ -53,25 +61,22 @@ func extractIdentifier(data, field string) (string, error) {
 	return "", fmt.Errorf("field '%s' is required", field)
 }
 
-func getIdentifier(dataType string, newData string) string {
-	var newIdentifier string
-	switch dataType {
-	case "login":
-		var err error
-		newIdentifier, err = extractIdentifier(newData, "login")
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-	case "bank card":
-		var err error
-		newIdentifier, err = extractIdentifier(newData, "number")
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-	case "text":
-		newIdentifier = ""
-	default:
-		log.Fatalf("Unknown data type")
+var identifierExtractors = map[string]func(string) (string, error){
+	"login": func(data string) (string, error) {
+		return extractIdentifier(data, "login")
+	},
+	"bank card": func(data string) (string, error) {
+		return extractIdentifier(data, "number")
+	},
+	"text": func(data string) (string, error) {
+		return "", nil
+	},
+}
+
+func getIdentifier(dataType, newData string) (string, error) {
+	extractor, ok := identifierExtractors[dataType]
+	if !ok {
+		return "", fmt.Errorf("unknown data type: %s", dataType)
 	}
-	return newIdentifier
+	return extractor(newData)
 }
