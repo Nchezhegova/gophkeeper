@@ -42,7 +42,7 @@ func (uc *UserUseCase) Login(username, password string) (string, error) {
 
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &Claims{
-		UserID: uint32(user.ID), // Приведение user.ID к uint32
+		UserID: uint32(user.ID),
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
 		},

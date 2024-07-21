@@ -35,7 +35,7 @@ func getData(cmd *cobra.Command, args []string) {
 		log.Fatalf("could not load TLS certificate: %v", err)
 	}
 
-	conn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(creds))
+	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(creds))
 	if err != nil {
 		log.Fatalf("could not connect to server: %v", err)
 	}

@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	db.Init() // Создание базы данных и таблиц
+	db.Init()
 
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {

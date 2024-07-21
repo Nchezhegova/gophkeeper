@@ -24,7 +24,6 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (interface{}, error) {
-		// Пропуск проверки токена для путей регистрации и логина
 		if info.FullMethod == "/proto.GophKeeper/Register" || info.FullMethod == "/proto.GophKeeper/Login" {
 			return handler(ctx, req)
 		}
@@ -54,7 +53,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			return nil, status.Errorf(codes.Unauthenticated, "invalid token")
 		}
 
-		newCtx := context.WithValue(ctx, "user_id", int(claims.UserID)) // Сохраняем как int
+		newCtx := context.WithValue(ctx, "user_id", int(claims.UserID))
 		return handler(newCtx, req)
 	}
 }
